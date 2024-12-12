@@ -6,7 +6,7 @@ exports.getStatuses = async (req, res) => {
     const statuses = await Status.find();
     res.json(statuses);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch statuses', error });
   }
 };
 
@@ -18,31 +18,31 @@ exports.createStatus = async (req, res) => {
     const savedStatus = await status.save();
     res.status(201).json(savedStatus);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating status', error: error.message });
+    res.status(400).json({ message: 'Failed to create status', error });
   }
 };
 
 // Update a status
 exports.updateStatus = async (req, res) => {
   try {
+    const { id } = req.params;
     const { name } = req.body;
-    const updatedStatus = await Status.findByIdAndUpdate(
-      req.params.id,
-      { name },
-      { new: true }
-    );
+    const updatedStatus = await Status.findByIdAndUpdate(id, { name }, { new: true });
+    if (!updatedStatus) return res.status(404).json({ message: 'Status not found' });
     res.json(updatedStatus);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating status', error: error.message });
+    res.status(400).json({ message: 'Failed to update status', error });
   }
 };
 
 // Delete a status
 exports.deleteStatus = async (req, res) => {
   try {
-    const deletedStatus = await Status.findByIdAndDelete(req.params.id);
-    res.json(deletedStatus);
+    const { id } = req.params;
+    const deletedStatus = await Status.findByIdAndDelete(id);
+    if (!deletedStatus) return res.status(404).json({ message: 'Status not found' });
+    res.json({ message: 'Status deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Failed to delete status', error });
   }
 };

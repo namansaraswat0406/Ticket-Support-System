@@ -6,43 +6,47 @@ exports.getDepartments = async (req, res) => {
     const departments = await Department.find();
     res.json(departments);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 // Create a new department
 exports.createDepartment = async (req, res) => {
   try {
-    const { name } = req.body;
-    const department = new Department({ name });
+    const department = new Department(req.body);
     const savedDepartment = await department.save();
     res.status(201).json(savedDepartment);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating department', error: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
-// Update a department
+// Update an existing department
 exports.updateDepartment = async (req, res) => {
   try {
-    const { name } = req.body;
     const updatedDepartment = await Department.findByIdAndUpdate(
       req.params.id,
-      { name },
+      req.body,
       { new: true }
     );
+    if (!updatedDepartment) {
+      return res.status(404).json({ message: 'Department not found' });
+    }
     res.json(updatedDepartment);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating department', error: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
 // Delete a department
 exports.deleteDepartment = async (req, res) => {
   try {
-    const deletedDepartment = await Department.findByIdAndDelete(req.params.id);
-    res.json(deletedDepartment);
+    const department = await Department.findByIdAndDelete(req.params.id);
+    if (!department) {
+      return res.status(404).json({ message: 'Department not found' });
+    }
+    res.json({ message: 'Department deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };

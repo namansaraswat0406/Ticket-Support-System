@@ -23,6 +23,9 @@ app.use('/api/tickets', authMiddleware, require('./routes/ticketRoutes'));  // T
 app.use('/api/rules', authMiddleware, require('./routes/ruleRoutes'));  // Rule routes (protected)
 app.use('/api/departments', authMiddleware, require('./routes/departmentRoutes'));  // Department routes (protected)
 app.use('/api/statuses', authMiddleware, require('./routes/statusRoutes'));  // Status routes (protected)
+app.use('/api/rules', require('./routes/ruleRoutes'));
+app.use('/api/departments', require('./routes/departmentRoutes'));
+app.use('/api/statuses', require('./routes/statusRoutes'));
 
 // Error handling middleware (should be placed last)
 app.use(errorMiddleware);

@@ -1,22 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getRules,
-  createRule,
-  updateRule,
-  deleteRule,
-} = require('../controllers/ruleController'); // Ensure the correct import
+const { getRules, createRule, updateRule, deleteRule } = require('../controllers/ruleController');
+const authMiddleware = require('../middleware/auth');
 
-// Get all rules
-router.get('/', getRules);
+// Routes
+router.route('/')
+  .get(authMiddleware, getRules)       // Get all rules
+  .post(authMiddleware, createRule);   // Create a rule
 
-// Create a new rule
-router.post('/', createRule);
-
-// Update a rule
-router.put('/:id', updateRule);
-
-// Delete a rule
-router.delete('/:id', deleteRule);
+router.route('/:id')
+  .put(authMiddleware, updateRule)     // Update a rule
+  .delete(authMiddleware, deleteRule); // Delete a rule
 
 module.exports = router;

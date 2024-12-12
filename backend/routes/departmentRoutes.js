@@ -1,22 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getDepartments,
-  createDepartment,
-  updateDepartment,
-  deleteDepartment,
-} = require('../controllers/departmentController'); // Make sure this is correct
+const { getDepartments, createDepartment, updateDepartment, deleteDepartment } = require('../controllers/departmentController');
+const authMiddleware = require('../middleware/auth');
 
-// Get all departments
-router.get('/', getDepartments);
+// Routes
+router.route('/')
+  .get(authMiddleware, getDepartments)       // Get all departments
+  .post(authMiddleware, createDepartment);   // Create a department
 
-// Create a new department
-router.post('/', createDepartment);
-
-// Update a department
-router.put('/:id', updateDepartment);
-
-// Delete a department
-router.delete('/:id', deleteDepartment);
+router.route('/:id')
+  .put(authMiddleware, updateDepartment)     // Update a department
+  .delete(authMiddleware, deleteDepartment); // Delete a department
 
 module.exports = router;

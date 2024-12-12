@@ -1,22 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getStatuses,  // Ensure this function is correctly imported from the controller
-  createStatus,
-  updateStatus,
-  deleteStatus,
-} = require('../controllers/statusController'); // Make sure the path is correct
+const { getStatuses, createStatus, updateStatus, deleteStatus } = require('../controllers/statusController');
+const authMiddleware = require('../middleware/auth');
 
-// Get all statuses
-router.get('/', getStatuses);
+// Routes
+router.route('/')
+  .get(authMiddleware, getStatuses)       // Get all statuses
+  .post(authMiddleware, createStatus);    // Create a status
 
-// Create a new status
-router.post('/', createStatus);
-
-// Update a status
-router.put('/:id', updateStatus);
-
-// Delete a status
-router.delete('/:id', deleteStatus);
+router.route('/:id')
+  .put(authMiddleware, updateStatus)      // Update a status
+  .delete(authMiddleware, deleteStatus);  // Delete a status
 
 module.exports = router;
