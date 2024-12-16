@@ -4,32 +4,33 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authMiddleware = require('./middleware/auth');
 const errorMiddleware = require('./middleware/error');
-const corsMiddleware = require('./middleware/cors');
 const { loginRateLimiter } = require('./middleware/rateLimit');
 const { validateSignUp } = require('./middleware/validate'); // Validation middleware
 
-dotenv.config();
-connectDB();
+dotenv.config(); // Load environment variables
+connectDB(); // Connect to MongoDB
 
 const app = express();
 
 // Middleware
-app.use(corsMiddleware); // Apply CORS settings globally
-app.use(express.json());  // Built-in middleware to parse JSON requests
+app.use(cors({
+  origin: 'http://localhost:3000', // Allow frontend origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
+  credentials: true, // Allow cookies and credentials
+}));
+app.use(express.json()); // Middleware to parse JSON requests
 
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));  // Authentication routes (login, signup)
-app.use('/api/tickets', authMiddleware, require('./routes/ticketRoutes'));  // Ticket routes (protected)
-app.use('/api/rules', authMiddleware, require('./routes/ruleRoutes'));  // Rule routes (protected)
-app.use('/api/departments', authMiddleware, require('./routes/departmentRoutes'));  // Department routes (protected)
-app.use('/api/statuses', authMiddleware, require('./routes/statusRoutes'));  // Status routes (protected)
-app.use('/api/rules', require('./routes/ruleRoutes'));
-app.use('/api/departments', require('./routes/departmentRoutes'));
-app.use('/api/statuses', require('./routes/statusRoutes'));
+app.use('/api/auth', require('./routes/authRoutes')); // Authentication routes
+app.use('/api/tickets', authMiddleware, require('./routes/ticketRoutes')); // Ticket routes
+app.use('/api/rules', authMiddleware, require('./routes/ruleRoutes')); // Rule routes
+app.use('/api/departments', authMiddleware, require('./routes/departmentRoutes')); // Department routes
+app.use('/api/statuses', authMiddleware, require('./routes/statusRoutes')); // Status routes
 
-// Error handling middleware (should be placed last)
+// Error handling middleware (must be last)
 app.use(errorMiddleware);
 
+// Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

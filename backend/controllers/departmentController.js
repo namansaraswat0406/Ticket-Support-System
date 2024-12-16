@@ -13,11 +13,18 @@ exports.getDepartments = async (req, res) => {
 // Create a new department
 exports.createDepartment = async (req, res) => {
   try {
-    const department = new Department(req.body);
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Department name is required' });
+    }
+
+    const department = new Department({ name });
     const savedDepartment = await department.save();
+
     res.status(201).json(savedDepartment);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: 'Error creating department', error });
   }
 };
 

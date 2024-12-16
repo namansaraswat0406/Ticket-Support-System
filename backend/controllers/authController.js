@@ -14,7 +14,7 @@ exports.signUp = async (req, res) => {
     }
 
     // Create a new user
-    const newUser = new User({ email, password });
+    const newUser = new User({ email, password, userType });
 
     // Save the user to the database
     await newUser.save();
