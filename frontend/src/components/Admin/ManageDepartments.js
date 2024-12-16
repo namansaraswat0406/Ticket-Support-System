@@ -4,118 +4,141 @@ import api from '../../utils/api';
 
 const ManageDepartments = () => {
   const [departments, setDepartments] = useState([]);
-  const [currentDepartment, setCurrentDepartment] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentDepartment, setCurrentDepartment] = useState({ name: '' });
+  const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState('');
-
-  const fetchDepartments = async () => {
-    try {
-      const response = await api.get('/departments'); // GET /departments
-      setDepartments(response.data);
-    } catch (err) {
-      setError('Failed to load departments');
-    }
-  };
-
-  const handleSaveDepartment = async () => {
-    try {
-      if (currentDepartment._id) {
-        await api.put(`/departments/${currentDepartment._id}`, currentDepartment); // PUT /departments/:id
-      } else {
-        const response = await api.post('/departments', currentDepartment); // POST /departments
-        setDepartments([...departments, response.data]);
-      }
-      setShowModal(false);
-      setCurrentDepartment(null);
-    } catch (err) {
-      setError('Failed to save department');
-    }
-  };
-
-  const handleDeleteDepartment = async (id) => {
-    try {
-      await api.delete(`/departments/${id}`); // DELETE /departments/:id
-      setDepartments(departments.filter((dept) => dept._id !== id));
-    } catch (err) {
-      setError('Failed to delete department');
-    }
-  };
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchDepartments();
   }, []);
 
+  const fetchDepartments = async () => {
+    try {
+      const response = await api.get('/departments');
+      setDepartments(response.data);
+    } catch (error) {
+      console.error('Failed to fetch departments:', error);
+      setError('Failed to fetch departments. Please try again.');
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (!currentDepartment.name.trim()) {
+        setError('Department name is required.');
+        return;
+      }
+
+      if (isEditing) {
+        await api.put(`/departments/${currentDepartment._id}`, currentDepartment);
+        setSuccessMessage('Department updated successfully!');
+      } else {
+        await api.post('/departments', currentDepartment);
+        setSuccessMessage('Department created successfully!');
+      }
+
+      fetchDepartments();
+      setShowModal(false);
+      setCurrentDepartment({ name: '' });
+    } catch (error) {
+      console.error('Failed to save department:', error);
+      setError('Failed to save department. Please try again.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/departments/${id}`);
+      fetchDepartments();
+      setSuccessMessage('Department deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete department:', error);
+      setError('Failed to delete department. Please try again.');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setCurrentDepartment({ name: '' });
+    setError('');
+    setSuccessMessage('');
+  };
+
   return (
     <div>
       <h3>Manage Departments</h3>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Button className="mb-3" onClick={() => setShowModal(true)}>Add Department</Button>
-      <Table striped bordered hover responsive>
+
+      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+      {successMessage && <Alert variant="success" onClose={() => setSuccessMessage('')} dismissible>{successMessage}</Alert>}
+
+      <Button
+        onClick={() => {
+          setShowModal(true);
+          setIsEditing(false);
+        }}
+        className="mb-3"
+      >
+        Add Department
+      </Button>
+
+      <Table striped bordered hover>
         <thead>
           <tr>
-            <th>#</th>
             <th>Name</th>
-            <th>Description</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {departments.map((dept, index) => (
-            <tr key={dept._id}>
-              <td>{index + 1}</td>
-              <td>{dept.name}</td>
-              <td>{dept.description}</td>
+          {departments.map((department) => (
+            <tr key={department._id}>
+              <td>{department.name}</td>
               <td>
                 <Button
-                  variant="info"
-                  size="sm"
+                  variant="warning"
+                  className="me-2"
                   onClick={() => {
-                    setCurrentDepartment(dept);
+                    setCurrentDepartment(department);
                     setShowModal(true);
+                    setIsEditing(true);
                   }}
                 >
                   Edit
-                </Button>{' '}
-                <Button variant="danger" size="sm" onClick={() => handleDeleteDepartment(dept._id)}>
-                  Delete
                 </Button>
+                <Button variant="danger" onClick={() => handleDelete(department._id)}>Delete</Button>
               </td>
             </tr>
           ))}
         </tbody>
       </Table>
 
-      {/* Modal for Adding/Editing Departments */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
-          <Modal.Title>{currentDepartment?._id ? 'Edit Department' : 'Add Department'}</Modal.Title>
+          <Modal.Title>{isEditing ? 'Edit Department' : 'Add Department'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group controlId="formDepartmentName">
-              <Form.Label>Name</Form.Label>
+            <Form.Group>
+              <Form.Label>Department Name</Form.Label>
               <Form.Control
                 type="text"
-                value={currentDepartment?.name || ''}
-                onChange={(e) => setCurrentDepartment({ ...currentDepartment, name: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group controlId="formDepartmentDescription">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={currentDepartment?.description || ''}
+                value={currentDepartment.name}
                 onChange={(e) =>
-                  setCurrentDepartment({ ...currentDepartment, description: e.target.value })
+                  setCurrentDepartment({ ...currentDepartment, name: e.target.value })
                 }
+                placeholder="Enter department name"
               />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleSaveDepartment}>Save</Button>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleSave}>
+            Save
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

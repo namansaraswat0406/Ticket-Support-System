@@ -1,43 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Alert } from 'react-bootstrap';
-import api from '../../utils/api';
+import { Button, Table, Modal, Form } from 'react-bootstrap';
+import axios from 'axios';
 
 const ManageRules = () => {
-  const [rules, setRules] = useState([]);
-  const [currentRule, setCurrentRule] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [error, setError] = useState('');
+  const [rules, setRules] = useState([]); // To store fetched rules
+  const [showModal, setShowModal] = useState(false); // To toggle the modal
+  const [ruleName, setRuleName] = useState(''); // To store rule name
+  const [ruleDescription, setRuleDescription] = useState(''); // To store rule description
+  const [editRuleId, setEditRuleId] = useState(null); // To store ID of the rule being edited
 
+  // Fetch all rules from the backend
   const fetchRules = async () => {
     try {
-      const response = await api.get('/rules'); // GET /rules
+      const response = await axios.get('/api/rules', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
+      });
       setRules(response.data);
-    } catch (err) {
-      setError('Failed to load rules');
-    }
-  };
-
-  const handleSaveRule = async () => {
-    try {
-      if (currentRule._id) {
-        await api.put(`/rules/${currentRule._id}`, currentRule); // PUT /rules/:id
-      } else {
-        const response = await api.post('/rules', currentRule); // POST /rules
-        setRules([...rules, response.data]);
-      }
-      setShowModal(false);
-      setCurrentRule(null);
-    } catch (err) {
-      setError('Failed to save rule');
-    }
-  };
-
-  const handleDeleteRule = async (id) => {
-    try {
-      await api.delete(`/rules/${id}`); // DELETE /rules/:id
-      setRules(rules.filter((rule) => rule._id !== id));
-    } catch (err) {
-      setError('Failed to delete rule');
+    } catch (error) {
+      console.error('Failed to fetch rules:', error);
     }
   };
 
@@ -45,17 +25,72 @@ const ManageRules = () => {
     fetchRules();
   }, []);
 
+  // Handle Save/Update Rule
+  const handleSave = async () => {
+    try {
+      if (editRuleId) {
+        // Update existing rule
+        await axios.put(
+          `/api/rules/${editRuleId}`,
+          { name: ruleName, description: ruleDescription },
+          { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } }
+        );
+      } else {
+        // Create new rule
+        await axios.post(
+          '/api/rules',
+          { name: ruleName, description: ruleDescription },
+          { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } }
+        );
+      }
+      fetchRules(); // Refresh rules after save
+      handleCloseModal(); // Close the modal
+    } catch (error) {
+      console.error('Failed to save rule:', error);
+    }
+  };
+
+  // Handle Delete Rule
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/api/rules/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
+      });
+      fetchRules(); // Refresh rules after delete
+    } catch (error) {
+      console.error('Failed to delete rule:', error);
+    }
+  };
+
+  // Open the modal (for adding or editing)
+  const handleOpenModal = (rule = null) => {
+    if (rule) {
+      setEditRuleId(rule._id);
+      setRuleName(rule.name);
+      setRuleDescription(rule.description);
+    } else {
+      setEditRuleId(null);
+      setRuleName('');
+      setRuleDescription('');
+    }
+    setShowModal(true);
+  };
+
+  // Close the modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
   return (
     <div>
       <h3>Manage Rules</h3>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Button className="mb-3" onClick={() => setShowModal(true)}>Add Rule</Button>
-      <Table striped bordered hover responsive>
+      <Button onClick={() => handleOpenModal()}>Add Rule</Button>
+      <Table striped bordered hover className="mt-3">
         <thead>
           <tr>
             <th>#</th>
             <th>Name</th>
-            <th>Conditions</th>
+            <th>Description</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -64,15 +99,12 @@ const ManageRules = () => {
             <tr key={rule._id}>
               <td>{index + 1}</td>
               <td>{rule.name}</td>
-              <td>{rule.conditions}</td>
+              <td>{rule.description}</td>
               <td>
-                <Button variant="info" size="sm" onClick={() => {
-                  setCurrentRule(rule);
-                  setShowModal(true);
-                }}>
+                <Button variant="warning" onClick={() => handleOpenModal(rule)}>
                   Edit
                 </Button>{' '}
-                <Button variant="danger" size="sm" onClick={() => handleDeleteRule(rule._id)}>
+                <Button variant="danger" onClick={() => handleDelete(rule._id)}>
                   Delete
                 </Button>
               </td>
@@ -82,34 +114,40 @@ const ManageRules = () => {
       </Table>
 
       {/* Modal for Adding/Editing Rules */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
-          <Modal.Title>{currentRule?._id ? 'Edit Rule' : 'Add Rule'}</Modal.Title>
+          <Modal.Title>{editRuleId ? 'Edit Rule' : 'Add Rule'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group controlId="formRuleName">
-              <Form.Label>Name</Form.Label>
+            <Form.Group>
+              <Form.Label>Rule Name</Form.Label>
               <Form.Control
                 type="text"
-                value={currentRule?.name || ''}
-                onChange={(e) => setCurrentRule({ ...currentRule, name: e.target.value })}
+                value={ruleName}
+                onChange={(e) => setRuleName(e.target.value)}
+                placeholder="Enter rule name"
               />
             </Form.Group>
-            <Form.Group controlId="formRuleConditions">
-              <Form.Label>Conditions</Form.Label>
+            <Form.Group>
+              <Form.Label>Rule Description</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
-                value={currentRule?.conditions || ''}
-                onChange={(e) => setCurrentRule({ ...currentRule, conditions: e.target.value })}
+                value={ruleDescription}
+                onChange={(e) => setRuleDescription(e.target.value)}
+                placeholder="Enter rule description"
               />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleSaveRule}>Save</Button>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSave}>
+            Save
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

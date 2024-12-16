@@ -12,7 +12,7 @@ const AdminPanel = () => {
     <Container fluid className="mt-4">
       <Row>
         {/* Sidebar Navigation */}
-        <Col md={3} lg={2} className="bg-light p-4" style={{ height: '80vh' }}>
+        <Col md={3} lg={2} className="bg-light p-4" >
           <h4>Admin Panel</h4>
           <Nav defaultActiveKey="/admin" className="flex-column">
             <Nav.Link as={Link} to="/admin">Dashboard</Nav.Link>

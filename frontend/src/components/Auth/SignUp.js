@@ -1,79 +1,74 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import api from '../../utils/api';  // Assuming you have set up Axios instance
+import axios from 'axios';
+import { Container, Form, Button, Alert } from 'react-bootstrap';
 
 const SignUp = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({ email: '', password: '', userType: 'user' });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);  // To handle loading state
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignUp = async (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);  // Show loading state
-
+    setError('');
     try {
-      // Make POST request to sign up the user
-      const response = await api.post('/auth/signup', { email, password });
-      const { token, userType } = response.data;
-
-      // Store token and userType (role)
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userType', userType);
-
-      // Redirect to the appropriate dashboard based on userType (role)
-      if (userType === 'admin') {
-        navigate('/admin');  // Redirect to Admin Dashboard
-      } else {
-        navigate('/dashboard');  // Redirect to User Dashboard
+      const response = await axios.post('http://localhost:5000/api/auth/signup', formData);
+      if (response.status === 201) {
+        setSuccess(true);
+        setTimeout(() => navigate('/'), 2000); // Redirect to login page after success
       }
     } catch (err) {
-      setLoading(false);  // Stop loading state
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);  // Display error message from server
-      } else {
-        setError('An error occurred. Please try again.');  // Generic error message
-      }
+      setError(err.response?.data?.message || 'An error occurred');
     }
   };
 
   return (
     <Container className="mt-5">
-      <Row className="justify-content-md-center">
-        <Col xs={12} md={6}>
-          <h3 className="text-center">Sign Up</h3>
-          {error && <Alert variant="danger">{error}</Alert>}  {/* Show error message if any */}
-          <Form onSubmit={handleSignUp}>
-            <Form.Group className="mb-3" controlId="formBasicEmail">
-              <Form.Label>Email address</Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="Enter email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </Form.Group>
+      <h2>Sign Up</h2>
+      {success && <Alert variant="success">Sign Up Successful! Redirecting to login...</Alert>}
+      {error && <Alert variant="danger">{error}</Alert>}
+      <Form onSubmit={handleSubmit}>
+        <Form.Group controlId="email">
+          <Form.Label>Email address</Form.Label>
+          <Form.Control
+            type="email"
+            name="email"
+            placeholder="Enter email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </Form.Group>
 
-            <Form.Group className="mb-3" controlId="formBasicPassword">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </Form.Group>
+        <Form.Group controlId="password" className="mt-3">
+          <Form.Label>Password</Form.Label>
+          <Form.Control
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+        </Form.Group>
 
-            <Button variant="primary" type="submit" className="w-100" disabled={loading}>
-              {loading ? 'Signing Up...' : 'Sign Up'}
-            </Button>
-          </Form>
-        </Col>
-      </Row>
+        {/* <Form.Group controlId="userType" className="mt-3">
+          <Form.Label>User Type</Form.Label>
+          <Form.Select name="userType" value={formData.userType} onChange={handleChange} required>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </Form.Select>
+        </Form.Group> */}
+
+        <Button variant="primary" type="submit" className="mt-4">
+          Sign Up
+        </Button>
+      </Form>
     </Container>
   );
 };

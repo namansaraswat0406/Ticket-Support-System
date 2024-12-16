@@ -8,6 +8,7 @@ import Login from './components/Auth/Login';
 import NotFound from './pages/NotFound';
 import SignUp from './components/Auth/SignUp';
 
+
 const App = () => {
   const [userRole, setUserRole] = useState(null);  // To store user role from localStorage
 
@@ -37,6 +38,7 @@ const App = () => {
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+      
 
         {/* Protected Routes - User */}
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} roleRequired="user" />} />
