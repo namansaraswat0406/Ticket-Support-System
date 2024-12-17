@@ -61,8 +61,9 @@ $ npm install
 Create a `.env` file in the `backend` folder and add the following:
 ```env
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/ticket-system
-JWT_SECRET=your_jwt_secret
+MONGO_URI=mongodb+srv://namansaraswat0406:namanisapalindrome@support-ticket.6nkyl.mongodb.net/?retryWrites=true&w=majority&appName=support-ticket
+JWT_SECRET=your_secret_key
+
 ```
 
 ### 4. Run the Application
@@ -75,6 +76,16 @@ $ npm run dev
 ```bash
 $ cd frontend
 $ npm start
+```
+#### User Credentials:
+```
+Email: user@user
+Password: user@user
+```
+#### Admin Credentials:
+```
+Email: user@admin
+Password: user@admin
 ```
 
 The backend will run on `http://localhost:5000` and the frontend on `http://localhost:3000`.
